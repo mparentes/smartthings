@@ -13,6 +13,8 @@ const char* ssid = "SSID";
 const char* password = "PASS";
 
 #define DHTPIN 2     // what pin we're connected to
+#define SWITCH 13
+
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
 DHT dht(DHTPIN, DHTTYPE); //// Initialize DHT sensor for normal 16mhz Arduino
 
@@ -20,6 +22,8 @@ float currentHumidity;  //Stores humidity value
 float currentTemperature; //Stores temperature value 
 float temp;
 float hum;
+
+String response;
 
 ESP8266WebServer server(80);
 
@@ -37,6 +41,9 @@ void setup(void){
   Serial.begin(115200);
   WiFi.begin(ssid, password);
   Serial.println("");
+
+  pinMode(SWITCH, OUTPUT);
+  digitalWrite(SWITCH, LOW);
 
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
@@ -56,9 +63,23 @@ void setup(void){
 
   server.on("/", [](){ 
     Serial.println("Get Status");
-    printStatus();
-    server.send(200, "application/json", printStatus());
+    response = printStatus();
+    server.send(200, "application/json", response);
     });
+
+  server.on("/switch/on", [](){ 
+    Serial.println("Set Switch On");
+    digitalWrite(SWITCH, HIGH);
+    response = printStatus();
+    server.send(200, "application/json", response);
+  });
+
+  server.on("/switch/off", [](){ 
+    Serial.println("Set Switch Off");
+    digitalWrite(SWITCH, LOW);
+    response = printStatus();
+    server.send(200, "application/json", response);
+  });
   
   server.begin();
   Serial.println("HTTP server started");
@@ -89,14 +110,23 @@ String printStatus(){
 
   JsonObject& root = jsonBuffer.createObject();
 
+  int switchStatus = 0;
+
+  switchStatus = digitalRead(SWITCH);
+
+  Serial.println("SWITCH STATUS: " + switchStatus);
+  
+
   root["humidity"] = hum;
   root["temperature"] = temp;
-  root["switch"] = 0;
+  root["switch"] = (switchStatus == 1) ? "on" : "off";
   root["motion"] = "inactive";
   root["lum"] = 50;
 
   root.printTo(str);
 
+  root.printTo(Serial);
+  
   return str;
     
 }
