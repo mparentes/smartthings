@@ -50,8 +50,10 @@
 
 
 #define PIN_SWITCH_1                D6  //Relay
+#define PIN_SWITCH_2                D1  //Relay
 #define PIN_BUTTON_1                D3  //Button
 #define PIN_LED_1                   D7  //LED Indicator
+
 
 
 
@@ -61,7 +63,7 @@
 //******************************************************************************************
 String str_ssid     = WIFI_SSID;        
 String str_password = WIFI_PASS;        
-IPAddress ip(192, 168, 10, 42);         //Device IP Address       //  <---You must edit this line!
+IPAddress ip(192, 168, 10, 43);         //Device IP Address       //  <---You must edit this line!
 IPAddress gateway(192, 168, 10, 1);     //Router gateway          //  <---You must edit this line!
 IPAddress subnet(255, 255, 255, 0);     //LAN subnet mask         //  <---You must edit this line!
 IPAddress dnsserver(192, 168, 10, 1);   //DNS server              //  <---You must edit this line!
@@ -80,6 +82,10 @@ const unsigned int hubPort = 39500; // smartthings hub port
 //    data being sent to ST.  This allows a user to act on data changes locally within the 
 //    Arduino sktech.
 //******************************************************************************************
+
+bool channel1 = false;
+bool channel2 = false;
+
 void callback(const String &msg)
 {
   Serial.print(F("ST_Anything Callback: Sniffed data = "));
@@ -92,17 +98,46 @@ void callback(const String &msg)
   
   #ifdef SONOFF_DUAL
     if (msg == "switch1 on") {
-      
+      channel1 = true;  
+      LEDon1;
     }
     if (msg == "switch1 off") {
-      
+      channel1 = false;
+      LEDoff1;
     }
     if (msg == "switch2 on") {
-      
+      channel2 = true;
+      LEDon1;
     }
     if (msg == "switch2 off") {
-      
+      channel2 = false;
+      LEDoff1;
     }
+
+    Serial.write(0xA0);
+    Serial.write(0x04);
+    
+    if(channel1 && channel2)
+    {
+      Serial.write(0x03); 
+    }
+    else if(channel1 && channel2 == false)
+    {
+      Serial.write(0x01); 
+    }
+    else if(channel2 && channel1 == false)
+    {
+      Serial.write(0x02); 
+    }
+    else
+    {
+      Serial.write(0x00); 
+    }
+    
+    Serial.write(0xA1);
+    Serial.flush();
+    delay(250);
+    
   #endif
   
   
@@ -122,6 +157,10 @@ void setup()
   
   //Executors
   static st::EX_Switch executor1(F("switch1"), PIN_SWITCH_1, LOW, false);  //Inverted logic for "Active Low" Relay Board
+
+  #if defined SONOFF_DUAL
+    static st::EX_Switch executor2(F("switch2"), PIN_SWITCH_2, LOW, false);  //Inverted logic for "Active Low" Relay Board
+  #endif
   
   //*****************************************************************************
   //  Configure debug print output from each main class 
@@ -160,6 +199,9 @@ void setup()
   //Add each executor to the "Everything" Class
   //*****************************************************************************
   st::Everything::addExecutor(&executor1);
+  #if defined SONOFF_DUAL
+    st::Everything::addExecutor(&executor2);
+  #endif
     
   //*****************************************************************************
   //Initialize each of the devices which were added to the Everything Class
