@@ -1,6 +1,7 @@
 #include <SmartThingsESP8266WiFi.h>
 
-#include "Sonoff.h";
+#include "config.h"
+#include "Sonoff.h"
 
 //******************************************************************************************
 // ST_Anything Library 
@@ -58,8 +59,8 @@
 //******************************************************************************************
 //ESP8266 WiFi Information
 //******************************************************************************************
-String str_ssid     = "net_iot";                           //  <---You must edit this line!
-String str_password = "netiot05101520";                   //  <---You must edit this line!
+String str_ssid     = WIFI_SSID;        
+String str_password = WIFI_PASS;        
 IPAddress ip(192, 168, 10, 42);         //Device IP Address       //  <---You must edit this line!
 IPAddress gateway(192, 168, 10, 1);     //Router gateway          //  <---You must edit this line!
 IPAddress subnet(255, 255, 255, 0);     //LAN subnet mask         //  <---You must edit this line!
